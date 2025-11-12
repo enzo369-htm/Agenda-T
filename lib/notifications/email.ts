@@ -1,7 +1,16 @@
 import { Resend } from 'resend';
 import { formatDate, formatPrice } from '../utils';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization para evitar errores durante el build
+let resend: Resend | null = null;
+
+function getResendClient() {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY || 'dummy_key_for_build';
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export interface BookingEmailData {
   bookingId: string;
@@ -99,7 +108,8 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   `;
 
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@agendaturnospro.com',
       to: data.clientEmail,
       subject,
@@ -162,7 +172,8 @@ export async function sendBookingReminderEmail(data: BookingEmailData) {
   `;
 
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@agendaturnospro.com',
       to: data.clientEmail,
       subject,
@@ -211,7 +222,8 @@ export async function sendBookingCancellationEmail(data: BookingEmailData) {
   `;
 
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@agendaturnospro.com',
       to: data.clientEmail,
       subject,
