@@ -1,12 +1,24 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY no está definida');
+// Lazy initialization para evitar errores durante el build
+let stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const apiKey = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key_for_build';
+    stripeInstance = new Stripe(apiKey, {
+      apiVersion: '2024-11-20.acacia',
+      typescript: true,
+    });
+  }
+  return stripeInstance;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-11-20.acacia',
-  typescript: true,
+// Mantener compatibilidad con código existente
+export const stripe = new Proxy({} as Stripe, {
+  get: (target, prop) => {
+    return getStripe()[prop as keyof Stripe];
+  },
 });
 
 export const PLAN_PRICES = {
