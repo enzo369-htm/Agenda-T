@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import toast from 'react-hot-toast';
 
+// Forzar renderizado dinámico para useSearchParams
+export const dynamic = 'force-dynamic';
+
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
