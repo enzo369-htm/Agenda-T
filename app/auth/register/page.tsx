@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -9,10 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import toast from 'react-hot-toast';
 
-// Forzar renderizado dinámico para useSearchParams
-export const dynamic = 'force-dynamic';
-
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get('role') === 'BUSINESS_OWNER' ? 'BUSINESS_OWNER' : 'CLIENT';
@@ -243,6 +240,18 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary-600" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
 
