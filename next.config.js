@@ -25,7 +25,8 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  // Turbopack en dev para compilación más rápida
+  // Silenciar aviso: Next.js 16 usa Turbopack por defecto; tenemos webpack config
+  turbopack: {},
   webpack: (config, { dev }) => {
     // Solo externals de canvas en build (por si alguna dep lo requiere)
     if (!dev) {
