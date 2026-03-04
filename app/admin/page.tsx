@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     totalUsers: 0,
     totalBusinesses: 0,
     totalBookings: 0,

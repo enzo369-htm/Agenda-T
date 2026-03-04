@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Agenda Turnos Pro - Sistema de Reservas Online',
+  title: 'Turnos In - Sistema de Reservas Online',
   description:
     'Plataforma de agendado de turnos online para peluquerías, barberías y centros estéticos. Gestiona reservas, empleados y servicios de forma simple y profesional.',
   keywords: ['turnos', 'reservas', 'agenda', 'peluquería', 'barbería', 'estética'],

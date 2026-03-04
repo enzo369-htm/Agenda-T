@@ -1,4 +1,4 @@
-// Esquema de Prisma para Agenda Turnos Pro
+// Esquema de Prisma para Turnos In
 
 generator client {
   provider = "prisma-client-js"

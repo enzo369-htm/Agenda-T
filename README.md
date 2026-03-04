@@ -1,4 +1,4 @@
-# 🗓️ Agenda Turnos Pro
+# 🗓️ Turnos In
 
 Plataforma web completa de agendado de turnos online para peluquerías, barberías, centros estéticos y negocios de servicios. Desarrollada con Next.js 14, TypeScript, Prisma y PostgreSQL.
 

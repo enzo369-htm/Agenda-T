@@ -4,16 +4,12 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { formatPrice, formatDate, formatTime } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [businesses, setBusinesses] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -35,13 +31,18 @@ export default function DashboardPage() {
       if (session?.user?.role === 'BUSINESS_OWNER') {
         const response = await fetch('/api/businesses');
         const data = await response.json();
-        setBusinesses(data.businesses || []);
-      }
+        const userBusinesses = data.businesses || [];
 
-      // Buscar reservas del usuario
-      const bookingsResponse = await fetch('/api/bookings');
-      const bookingsData = await bookingsResponse.json();
-      setBookings(bookingsData.bookings || []);
+        // Si tiene negocios, redirigir al primero
+        if (userBusinesses.length > 0) {
+          router.push(`/dashboard/negocio/${userBusinesses[0].slug}`);
+          return;
+        }
+      } else {
+        // Si es cliente, redirigir a buscar negocios
+        router.push('/negocios');
+        return;
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -57,137 +58,39 @@ export default function DashboardPage() {
     );
   }
 
-  const isBusinessOwner = session?.user?.role === 'BUSINESS_OWNER';
-
+  // Si llegamos aquí, es un dueño de negocio sin negocios
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-600">Bienvenido, {session?.user?.name}</p>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardContent className="py-12 text-center">
+          <div className="mb-6">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
+              <svg
+                className="h-8 w-8 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost">Inicio</Button>
-              </Link>
-              {isBusinessOwner && (
-                <Link href="/dashboard/negocio/nuevo">
-                  <Button variant="primary">Crear Negocio</Button>
-                </Link>
-              )}
-            </div>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">Crea tu primer negocio</h2>
+            <p className="text-gray-600">
+              Comienza a recibir reservas online. Configura tu negocio en minutos.
+            </p>
           </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        {isBusinessOwner && businesses.length === 0 && (
-          <Card className="mb-8">
-            <CardContent className="py-12 text-center">
-              <h2 className="mb-2 text-xl font-semibold">No tienes negocios registrados</h2>
-              <p className="mb-6 text-gray-600">
-                Crea tu primer negocio para empezar a recibir reservas
-              </p>
-              <Link href="/dashboard/negocio/nuevo">
-                <Button variant="primary">Crear Mi Negocio</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {isBusinessOwner && businesses.length > 0 && (
-          <div className="mb-8">
-            <h2 className="mb-4 text-xl font-semibold">Mis Negocios</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {businesses.map((business) => (
-                <Card key={business.id}>
-                  <CardHeader>
-                    <CardTitle>{business.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="mb-4 text-sm text-gray-600">{business.description}</p>
-                    <div className="mb-4 space-y-2 text-sm">
-                      <p>📍 {business.city}</p>
-                      <p>📞 {business.phone}</p>
-                      <Badge variant={business.isActive ? 'success' : 'gray'}>
-                        {business.isActive ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </div>
-                    <Link href={`/dashboard/negocio/${business.slug}`}>
-                      <Button variant="primary" className="w-full">
-                        Gestionar
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <h2 className="mb-4 text-xl font-semibold">
-            {isBusinessOwner ? 'Reservas Recientes' : 'Mis Reservas'}
-          </h2>
-          
-          {bookings.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-gray-500">No tienes reservas</p>
-                {!isBusinessOwner && (
-                  <Link href="/negocios" className="mt-4 inline-block">
-                    <Button variant="primary">Buscar Negocios</Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {bookings.slice(0, 10).map((booking) => (
-                <Card key={booking.id}>
-                  <CardContent className="py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{booking.business.name}</h3>
-                        <p className="text-sm text-gray-600">{booking.service.name}</p>
-                        <p className="mt-1 text-sm text-gray-500">
-                          📅 {formatDate(booking.startTime, 'long')} - {formatTime(booking.startTime)}
-                        </p>
-                        {booking.employee && (
-                          <p className="text-sm text-gray-500">👤 {booking.employee.name}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <Badge
-                          variant={
-                            booking.status === 'CONFIRMED'
-                              ? 'success'
-                              : booking.status === 'PENDING'
-                              ? 'warning'
-                              : booking.status === 'COMPLETED'
-                              ? 'primary'
-                              : 'danger'
-                          }
-                        >
-                          {booking.status === 'CONFIRMED' && 'Confirmada'}
-                          {booking.status === 'PENDING' && 'Pendiente'}
-                          {booking.status === 'COMPLETED' && 'Completada'}
-                          {booking.status === 'CANCELLED' && 'Cancelada'}
-                        </Badge>
-                        <p className="mt-2 text-lg font-bold text-gray-900">
-                          {formatPrice(booking.totalPrice)}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+          <Link href="/dashboard/negocio/nuevo">
+            <Button variant="primary" className="w-full">
+              Crear Mi Negocio
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }

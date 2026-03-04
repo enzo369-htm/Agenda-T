@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { prisma, checkDatabaseConnection } from '@/lib/prisma';
 import { registerSchema } from '@/lib/validations/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar conexión a la base de datos
+    const dbCheck = await checkDatabaseConnection();
+    if (!dbCheck.connected) {
+      return NextResponse.json(
+        { 
+          error: 'Error de conexión a la base de datos. Por favor, verifica que la base de datos esté configurada correctamente.',
+          details: dbCheck.error
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
 
@@ -30,7 +42,8 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         passwordHash,
         phone: validatedData.phone,
-        role: validatedData.role,
+        // Forzamos BUSINESS_OWNER: esta app no registra clientes.
+        role: validatedData.role ?? 'BUSINESS_OWNER',
       },
       select: {
         id: true,

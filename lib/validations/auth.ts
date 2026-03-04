@@ -10,7 +10,8 @@ export const registerSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   phone: z.string().min(10, 'Teléfono inválido').optional(),
-  role: z.enum(['CLIENT', 'BUSINESS_OWNER']).default('CLIENT'),
+  // La plataforma es para dueños de negocio (no registro de clientes).
+  role: z.literal('BUSINESS_OWNER').optional().default('BUSINESS_OWNER'),
 });
 
 export const forgotPasswordSchema = z.object({

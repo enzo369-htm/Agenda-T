@@ -1,4 +1,4 @@
-# Dockerfile para Agenda Turnos Pro
+# Dockerfile para Turnos In
 
 FROM node:18-alpine AS base
 

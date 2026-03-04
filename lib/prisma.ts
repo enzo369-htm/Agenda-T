@@ -12,3 +12,16 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+// Función helper para verificar conexión
+export async function checkDatabaseConnection() {
+  try {
+    await prisma.$connect();
+    return { connected: true };
+  } catch (error: any) {
+    return { 
+      connected: false, 
+      error: error.message || 'Error de conexión a la base de datos' 
+    };
+  }
+}
+

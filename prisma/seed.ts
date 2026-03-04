@@ -28,7 +28,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // 1. Crear usuarios
-  const adminUser = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'admin@agendaturnospro.com',
       name: 'Administrador Plataforma',

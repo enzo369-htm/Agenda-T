@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { Logo } from '@/components/ui/Logo';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -56,11 +57,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
-              AT
-            </div>
-            <span className="text-2xl font-bold text-gray-900">Agenda Turnos Pro</span>
+          <Link href="/" className="inline-flex justify-center">
+            <Logo variant="full" size="lg" />
           </Link>
           <h1 className="mt-6 text-3xl font-bold text-gray-900">Iniciar Sesión</h1>
           <p className="mt-2 text-gray-600">Accede a tu cuenta</p>

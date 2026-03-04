@@ -8,28 +8,28 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <h3 className="mb-4 text-lg font-semibold">Agenda Turnos Pro</h3>
+            <h3 className="mb-4 text-lg font-semibold">Turnos In</h3>
             <p className="text-sm text-gray-600">
               La plataforma más completa para gestionar reservas y citas online.
             </p>
           </div>
 
           <div>
-            <h4 className="mb-4 text-sm font-semibold text-gray-900">Para Clientes</h4>
+            <h4 className="mb-4 text-sm font-semibold text-gray-900">Producto</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/negocios" className="text-gray-600 hover:text-primary-600">
-                  Buscar Negocios
+                <Link href="/#como-funciona" className="text-gray-600 hover:text-primary-600">
+                  Cómo funciona
                 </Link>
               </li>
               <li>
-                <Link href="/mis-reservas" className="text-gray-600 hover:text-primary-600">
-                  Mis Reservas
+                <Link href="/#precios" className="text-gray-600 hover:text-primary-600">
+                  Planes y precios
                 </Link>
               </li>
               <li>
-                <Link href="/como-funciona" className="text-gray-600 hover:text-primary-600">
-                  Cómo Funciona
+                <Link href="/auth/login" className="text-gray-600 hover:text-primary-600">
+                  Acceso
                 </Link>
               </li>
             </ul>
@@ -39,13 +39,13 @@ export function Footer() {
             <h4 className="mb-4 text-sm font-semibold text-gray-900">Para Negocios</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/para-negocios" className="text-gray-600 hover:text-primary-600">
-                  Información
+                <Link href="/#como-funciona" className="text-gray-600 hover:text-primary-600">
+                  Empezar
                 </Link>
               </li>
               <li>
-                <Link href="/precios" className="text-gray-600 hover:text-primary-600">
-                  Planes y Precios
+                <Link href="/#precios" className="text-gray-600 hover:text-primary-600">
+                  Elegir plan
                 </Link>
               </li>
               <li>
@@ -84,7 +84,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-          <p>© {currentYear} Agenda Turnos Pro. Todos los derechos reservados.</p>
+          <p>© {currentYear} Turnos In. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

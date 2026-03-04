@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -14,11 +9,14 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['lh3.googleusercontent.com', 'avatars.githubusercontent.com'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
       },
     ],
   },
@@ -27,8 +25,12 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  webpack: (config) => {
-    config.externals = [...(config.externals || []), { canvas: 'canvas' }];
+  // Turbopack en dev para compilación más rápida
+  webpack: (config, { dev }) => {
+    // Solo externals de canvas en build (por si alguna dep lo requiere)
+    if (!dev) {
+      config.externals = [...(config.externals || []), { canvas: 'canvas' }];
+    }
     return config;
   },
 };

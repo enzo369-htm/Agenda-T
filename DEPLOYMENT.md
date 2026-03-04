@@ -61,7 +61,7 @@ EMAIL_FROM=noreply@tudominio.com
 
 # App
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
-NEXT_PUBLIC_APP_NAME=Agenda Turnos Pro
+NEXT_PUBLIC_APP_NAME=Turnos In
 ```
 
 ### Paso 4: Configurar Build

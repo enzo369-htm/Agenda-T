@@ -7,7 +7,7 @@ export function getStripe(): Stripe {
   if (!stripeInstance) {
     const apiKey = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key_for_build';
     stripeInstance = new Stripe(apiKey, {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2023-10-16',
       typescript: true,
     });
   }
@@ -16,7 +16,7 @@ export function getStripe(): Stripe {
 
 // Mantener compatibilidad con código existente
 export const stripe = new Proxy({} as Stripe, {
-  get: (target, prop) => {
+  get: (_target, prop) => {
     return getStripe()[prop as keyof Stripe];
   },
 });

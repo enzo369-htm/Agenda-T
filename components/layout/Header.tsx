@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '../ui/Button';
+import { Logo } from '../ui/Logo';
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -10,22 +11,16 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
-            AT
-          </div>
-          <span className="text-xl font-bold text-gray-900">Agenda Turnos Pro</span>
+        <Link href="/">
+          <Logo variant="full" size="md" />
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/negocios" className="text-sm font-medium text-gray-700 hover:text-primary-600">
-            Buscar Negocios
-          </Link>
-          <Link href="/como-funciona" className="text-sm font-medium text-gray-700 hover:text-primary-600">
+          <Link href="/#como-funciona" className="text-sm font-medium text-gray-700 hover:text-primary-600">
             Cómo Funciona
           </Link>
-          <Link href="/para-negocios" className="text-sm font-medium text-gray-700 hover:text-primary-600">
-            Para Negocios
+          <Link href="/#precios" className="text-sm font-medium text-gray-700 hover:text-primary-600">
+            Planes
           </Link>
         </nav>
 

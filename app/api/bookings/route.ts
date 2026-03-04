@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { bookingSchema } from '@/lib/validations/booking';
-import { sendBookingConfirmationEmail } from '@/lib/notifications/email';
+import { sendBookingConfirmationEmail, sendNewBookingNotificationToBusiness } from '@/lib/notifications/email';
 import { sendBookingConfirmationWhatsApp } from '@/lib/notifications/whatsapp';
 
 // POST /api/bookings - Crear reserva
@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     const body = await request.json();
     const validatedData = bookingSchema.parse(body);
+    const clientName = validatedData.clientName ?? 'Sin nombre';
+    const clientEmail = validatedData.clientEmail ?? '';
+    const clientPhone = validatedData.clientPhone ?? '';
 
     // Obtener servicio y negocio
     const service = await prisma.service.findUnique({
@@ -64,6 +67,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obtener información del dueño del negocio
+    const businessWithOwner = await prisma.business.findUnique({
+      where: { id: service.businessId },
+      include: {
+        owner: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
     // Crear reserva
     const booking = await prisma.booking.create({
       data: {
@@ -71,9 +86,9 @@ export async function POST(request: NextRequest) {
         serviceId: service.id,
         employeeId: validatedData.employeeId,
         userId: session?.user?.id,
-        clientName: validatedData.clientName,
-        clientEmail: validatedData.clientEmail,
-        clientPhone: validatedData.clientPhone,
+        clientName,
+        clientEmail,
+        clientPhone,
         startTime,
         endTime,
         notes: validatedData.notes,
@@ -102,39 +117,67 @@ export async function POST(request: NextRequest) {
     });
 
     // Enviar confirmación por email
-    try {
-      await sendBookingConfirmationEmail({
-        bookingId: booking.id,
-        clientName: booking.clientName,
-        clientEmail: booking.clientEmail,
-        businessName: booking.business.name,
-        serviceName: booking.service.name,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        price: booking.totalPrice,
-        employeeName: booking.employee?.name,
-        businessAddress: booking.business.address,
-        businessPhone: booking.business.phone,
-        notes: booking.notes || undefined,
-      });
-    } catch (emailError) {
-      console.error('Error sending confirmation email:', emailError);
+    if (booking.clientEmail) {
+      try {
+        await sendBookingConfirmationEmail({
+          bookingId: booking.id,
+          clientName: booking.clientName,
+          clientEmail: booking.clientEmail,
+          businessName: booking.business.name,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          price: booking.totalPrice,
+          employeeName: booking.employee?.name,
+          businessAddress: booking.business.address,
+          businessPhone: booking.business.phone,
+          notes: booking.notes || undefined,
+        });
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
     }
 
     // Generar link de WhatsApp para confirmación
-    try {
-      await sendBookingConfirmationWhatsApp({
-        phone: booking.clientPhone,
-        clientName: booking.clientName,
-        businessName: booking.business.name,
-        serviceName: booking.service.name,
-        startTime: booking.startTime,
-        price: booking.totalPrice,
-        employeeName: booking.employee?.name,
-        businessAddress: booking.business.address,
-      });
-    } catch (whatsappError) {
-      console.error('Error sending WhatsApp:', whatsappError);
+    if (booking.clientPhone) {
+      try {
+        await sendBookingConfirmationWhatsApp({
+          phone: booking.clientPhone,
+          clientName: booking.clientName,
+          businessName: booking.business.name,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          price: booking.totalPrice,
+          employeeName: booking.employee?.name,
+          businessAddress: booking.business.address,
+        });
+      } catch (whatsappError) {
+        console.error('Error sending WhatsApp:', whatsappError);
+      }
+    }
+
+    // Enviar notificación al negocio
+    if (businessWithOwner?.owner?.email) {
+      try {
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        await sendNewBookingNotificationToBusiness({
+          bookingId: booking.id,
+          businessOwnerEmail: businessWithOwner.owner.email,
+          businessName: booking.business.name,
+          clientName: booking.clientName,
+          clientEmail: booking.clientEmail,
+          clientPhone: booking.clientPhone,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          price: booking.totalPrice,
+          employeeName: booking.employee?.name,
+          notes: booking.notes || undefined,
+          dashboardUrl: `${baseUrl}/dashboard/negocio/${booking.business.slug}`,
+        });
+      } catch (businessEmailError) {
+        console.error('Error sending business notification email:', businessEmailError);
+      }
     }
 
     return NextResponse.json(booking, { status: 201 });

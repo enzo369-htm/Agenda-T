@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { Logo } from '@/components/ui/Logo';
 import toast from 'react-hot-toast';
 
-function RegisterForm() {
+export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const defaultRole = searchParams.get('role') === 'BUSINESS_OWNER' ? 'BUSINESS_OWNER' : 'CLIENT';
   
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,7 +20,6 @@ function RegisterForm() {
     password: '',
     confirmPassword: '',
     phone: '',
-    role: defaultRole,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +46,7 @@ function RegisterForm() {
           email: formData.email,
           password: formData.password,
           phone: formData.phone || undefined,
-          role: formData.role,
+          role: 'BUSINESS_OWNER',
         }),
       });
 
@@ -94,48 +92,17 @@ function RegisterForm() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
-              AT
-            </div>
-            <span className="text-2xl font-bold text-gray-900">Agenda Turnos Pro</span>
+          <Link href="/" className="inline-flex justify-center">
+            <Logo variant="full" size="lg" />
           </Link>
           <h1 className="mt-6 text-3xl font-bold text-gray-900">Crear Cuenta</h1>
           <p className="mt-2 text-gray-600">
-            {defaultRole === 'BUSINESS_OWNER' ? 'Registra tu negocio' : 'Comienza a reservar turnos'}
+            Registra tu negocio
           </p>
         </div>
 
         <Card>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="mb-4">
-              <label className="label">Tipo de cuenta</label>
-              <div className="flex gap-4">
-                <label className="flex-1">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="CLIENT"
-                    checked={formData.role === 'CLIENT'}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                    className="mr-2"
-                  />
-                  Cliente
-                </label>
-                <label className="flex-1">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="BUSINESS_OWNER"
-                    checked={formData.role === 'BUSINESS_OWNER'}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                    className="mr-2"
-                  />
-                  Dueño de Negocio
-                </label>
-              </div>
-            </div>
-
             <Input
               label="Nombre completo"
               type="text"
@@ -240,18 +207,6 @@ function RegisterForm() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary-600" />
-      </div>
-    }>
-      <RegisterForm />
-    </Suspense>
   );
 }
 

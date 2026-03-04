@@ -1,12 +1,18 @@
 import { z } from 'zod';
 
+const emptyToUndefined = (value: unknown) => {
+  if (typeof value === 'string' && value.trim() === '') return undefined;
+  return value;
+};
+
 export const bookingSchema = z.object({
   serviceId: z.string().min(1, 'El servicio es requerido'),
   employeeId: z.string().optional(),
   startTime: z.string().or(z.date()),
-  clientName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  clientEmail: z.string().email('Email inválido'),
-  clientPhone: z.string().min(10, 'Teléfono inválido'),
+  // En el dashboard (dueño de negocio) permitimos crear reservas sin datos del cliente.
+  clientName: z.preprocess(emptyToUndefined, z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional()),
+  clientEmail: z.preprocess(emptyToUndefined, z.string().email('Email inválido').optional()),
+  clientPhone: z.preprocess(emptyToUndefined, z.string().min(10, 'Teléfono inválido').optional()),
   notes: z.string().optional(),
 });
 

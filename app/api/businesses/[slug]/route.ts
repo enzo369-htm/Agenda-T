@@ -3,13 +3,14 @@ import { prisma } from '@/lib/prisma';
 
 // GET /api/businesses/[slug] - Obtener negocio por slug (público)
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { slug: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const business = await prisma.business.findUnique({
       where: {
-        slug: params.slug,
+        slug: slug,
         isActive: true,
       },
       include: {

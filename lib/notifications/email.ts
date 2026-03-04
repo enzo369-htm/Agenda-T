@@ -100,7 +100,7 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
           </div>
           <div class="footer">
             <p>Este es un email automático, por favor no respondas a este mensaje.</p>
-            <p>© ${new Date().getFullYear()} Agenda Turnos Pro. Todos los derechos reservados.</p>
+            <p>© ${new Date().getFullYear()} Turnos In. Todos los derechos reservados.</p>
           </div>
         </div>
       </body>
@@ -232,6 +232,128 @@ export async function sendBookingCancellationEmail(data: BookingEmailData) {
     return { success: true };
   } catch (error) {
     console.error('Error sending cancellation email:', error);
+    return { success: false, error };
+  }
+}
+
+export interface BusinessNotificationData {
+  bookingId: string;
+  businessOwnerEmail: string;
+  businessName: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  serviceName: string;
+  startTime: Date;
+  endTime: Date;
+  price: number;
+  employeeName?: string;
+  notes?: string;
+  dashboardUrl: string;
+}
+
+export async function sendNewBookingNotificationToBusiness(data: BusinessNotificationData) {
+  const subject = `📅 Nueva reserva en ${data.businessName}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+          .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .detail-row { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+          .detail-label { font-weight: bold; color: #6b7280; font-size: 14px; }
+          .detail-value { color: #111827; margin-top: 5px; }
+          .button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .highlight { background: #d1fae5; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📅 Nueva Reserva</h1>
+          </div>
+          <div class="content">
+            <p>¡Hola!</p>
+            <p>Has recibido una nueva reserva en <strong>${data.businessName}</strong>.</p>
+            
+            <div class="highlight">
+              <strong>Detalles de la reserva:</strong>
+            </div>
+            
+            <div class="booking-details">
+              <div class="detail-row">
+                <div class="detail-label">Cliente</div>
+                <div class="detail-value">${data.clientName}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Email</div>
+                <div class="detail-value">${data.clientEmail}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Teléfono</div>
+                <div class="detail-value">${data.clientPhone}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Servicio</div>
+                <div class="detail-value">${data.serviceName}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Fecha y Hora</div>
+                <div class="detail-value">${formatDate(data.startTime, 'long')} a las ${formatDate(data.startTime, 'time')}</div>
+              </div>
+              ${data.employeeName ? `
+              <div class="detail-row">
+                <div class="detail-label">Profesional</div>
+                <div class="detail-value">${data.employeeName}</div>
+              </div>
+              ` : ''}
+              <div class="detail-row">
+                <div class="detail-label">Precio</div>
+                <div class="detail-value">${formatPrice(data.price)}</div>
+              </div>
+              ${data.notes ? `
+              <div class="detail-row">
+                <div class="detail-label">Notas</div>
+                <div class="detail-value">${data.notes}</div>
+              </div>
+              ` : ''}
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${data.dashboardUrl}" class="button">Ver en Dashboard</a>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px;">
+              Puedes gestionar esta reserva desde tu panel de control.
+            </p>
+          </div>
+          <div class="footer">
+            <p>Este es un email automático de Turnos In.</p>
+            <p>© ${new Date().getFullYear()} Turnos In. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    const client = getResendClient();
+    await client.emails.send({
+      from: process.env.EMAIL_FROM || 'noreply@agendaturnospro.com',
+      to: data.businessOwnerEmail,
+      subject,
+      html,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending business notification email:', error);
     return { success: false, error };
   }
 }
