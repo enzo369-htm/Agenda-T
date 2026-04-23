@@ -112,6 +112,8 @@ export function isValidEmail(email: string): boolean {
 }
 
 export function isValidPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 8 || digits.length > 15) return false;
   const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
   return phoneRegex.test(phone);
 }

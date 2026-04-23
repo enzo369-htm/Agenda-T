@@ -51,12 +51,8 @@ export function DatePicker({
         showOutsideDays
         className="!m-0"
         components={{
-          Chevron: ({ orientation }) =>
-            orientation === 'left' ? (
-              <ChevronLeft className="h-5 w-5" />
-            ) : (
-              <ChevronRight className="h-5 w-5" />
-            ),
+          IconLeft: () => <ChevronLeft className="h-5 w-5" />,
+          IconRight: () => <ChevronRight className="h-5 w-5" />,
         }}
         modifiersStyles={{
           selected: { backgroundColor: brandColor, color: '#fff' },

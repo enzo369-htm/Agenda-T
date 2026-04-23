@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
 
 interface BookingInfo {
@@ -16,20 +17,14 @@ type PageState = 'loading' | 'ready' | 'confirming' | 'done' | 'error' | 'expire
 
 export default function ConfirmarPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const token = params.token as string;
-  const preAction = searchParams.get('action');
 
   const [state, setState] = useState<PageState>('loading');
   const [booking, setBooking] = useState<BookingInfo | null>(null);
   const [resultAction, setResultAction] = useState<'confirm' | 'cancel' | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    validateToken();
-  }, [token]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     try {
       const res = await fetch(`/api/bookings/confirm/info?token=${token}`);
       if (!res.ok) {
@@ -56,7 +51,11 @@ export default function ConfirmarPage() {
       setErrorMsg('Error de conexión. Intentá de nuevo.');
       setState('error');
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void validateToken();
+  }, [validateToken]);
 
   const handleAction = async (action: 'confirm' | 'cancel') => {
     setState('confirming');
@@ -209,12 +208,12 @@ export default function ConfirmarPage() {
                   </>
                 )}
                 <div className="mt-6">
-                  <a
+                  <Link
                     href="/"
                     className="inline-block rounded-lg bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
                   >
                     Ir al inicio
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -252,12 +251,12 @@ export default function ConfirmarPage() {
                 <p className="text-gray-600">
                   El turno ya fue realizado y no se puede modificar.
                 </p>
-                <a
+                <Link
                   href="/"
                   className="mt-4 inline-block rounded-lg bg-gray-100 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
                 >
                   Ir al inicio
-                </a>
+                </Link>
               </div>
             </div>
           )}

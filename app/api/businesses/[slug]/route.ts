@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ZodError } from 'zod';
 import { businessUpdateSchema } from '@/lib/validations/business';
 import { slugify } from '@/lib/utils';
 
@@ -147,8 +148,10 @@ export async function PATCH(
     if (validated.openingHours !== undefined) {
       const hours = validated.openingHours as Record<string, { open?: boolean; start?: string; end?: string }>;
       const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-      const isDaySchedule = (d: unknown): d is { open: boolean; start?: string; end?: string } =>
-        d && typeof d === 'object' && 'open' in d;
+      const isDaySchedule = (d: unknown): d is { open: boolean; start?: string; end?: string } => {
+        if (d === null || typeof d !== 'object') return false;
+        return 'open' in d && typeof (d as { open: unknown }).open === 'boolean';
+      };
       const transformed: Record<string, { start: string; end: string }[]> = {};
       for (const day of days) {
         const d = hours[day];
@@ -168,9 +171,8 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
-      const zodError = error as { errors: Array<{ path: string[]; message: string }> };
-      const first = zodError.errors[0];
+    if (error instanceof ZodError) {
+      const first = error.errors[0];
       return NextResponse.json(
         { error: first?.message || 'Datos inválidos' },
         { status: 400 }

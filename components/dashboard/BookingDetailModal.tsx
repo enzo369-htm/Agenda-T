@@ -12,15 +12,15 @@ interface BookingDetailModalProps {
   onStatusChange?: () => void;
 }
 
-const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'primary' | 'secondary' }> = {
+const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'primary' | 'gray' }> = {
   PENDING: { label: 'Pendiente', variant: 'warning' },
   CONFIRMED: { label: 'Confirmada', variant: 'primary' },
   COMPLETED: { label: 'Completada', variant: 'success' },
-  CANCELLED: { label: 'Cancelada', variant: 'secondary' },
-  NO_SHOW: { label: 'No asistió', variant: 'secondary' },
+  CANCELLED: { label: 'Cancelada', variant: 'gray' },
+  NO_SHOW: { label: 'No asistió', variant: 'gray' },
 };
 
-export function BookingDetailModal({ booking, businessSlug, onClose, onStatusChange }: BookingDetailModalProps) {
+export function BookingDetailModal({ booking, businessSlug: _businessSlug, onClose, onStatusChange }: BookingDetailModalProps) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const startDate = new Date(booking.startTime);
@@ -28,7 +28,7 @@ export function BookingDetailModal({ booking, businessSlug, onClose, onStatusCha
     ? new Date(booking.endTime)
     : new Date(startDate.getTime() + (booking.service?.durationMinutes || 30) * 60000);
 
-  const statusInfo = STATUS_MAP[booking.status] || { label: booking.status, variant: 'secondary' as const };
+  const statusInfo = STATUS_MAP[booking.status] || { label: booking.status, variant: 'gray' as const };
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);

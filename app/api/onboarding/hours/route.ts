@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ZodError } from 'zod';
 import { onboardingHoursSchema } from '@/lib/validations/onboarding';
 
 export async function PATCH(request: NextRequest) {
@@ -41,9 +42,8 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
-      const zodError = error as { errors: Array<{ path: string[]; message: string }> };
-      const first = zodError.errors[0];
+    if (error instanceof ZodError) {
+      const first = error.errors[0];
       return NextResponse.json(
         { error: first?.message || 'Datos inválidos' },
         { status: 400 }

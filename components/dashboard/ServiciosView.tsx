@@ -276,7 +276,7 @@ export function ServiciosView({ business, onServicesChanged }: ServiciosViewProp
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-gray-900">{service.name}</h4>
                       {!service.isActive && (
-                        <Badge variant="secondary">Inactivo</Badge>
+                        <Badge variant="gray">Inactivo</Badge>
                       )}
                     </div>
                     {service.description && (

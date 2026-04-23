@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ZodError } from 'zod';
 import { businessSchema } from '@/lib/validations/business';
 
 // GET /api/businesses - Listar negocios (público) o ?mine=1 para solo los del usuario
@@ -134,13 +135,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating business:', error);
 
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
-      const zodError = error as { errors: Array<{ path: string[]; message: string }> };
-      const firstError = zodError.errors[0];
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
       const field = firstError?.path?.join('.') || 'campo';
       const message = firstError?.message || 'Datos inválidos';
       return NextResponse.json(
-        { error: `${field}: ${message}`, details: zodError.errors },
+        { error: `${field}: ${message}`, details: error.errors },
         { status: 400 }
       );
     }
