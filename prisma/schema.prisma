@@ -297,9 +297,10 @@ model Booking {
   requiresPayment Boolean       @default(false)
   totalPrice      Float
   currency        String        @default("ARS")
-  reminderSent    Boolean       @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  reminderSent      Boolean       @default(false)
+  confirmationToken String?       @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   // Relaciones
   business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -369,8 +370,8 @@ model Review {
   businessId String
   userId     String
   rating     Int // 1-5
-  comment    String?  @db.Text
-  response   String?  @db.Text
+  comment    String? @db.Text
+  response   String? @db.Text
   isVisible  Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

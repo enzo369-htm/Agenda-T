@@ -16,9 +16,10 @@ import { NewBookingModal } from '@/components/dashboard/NewBookingModal';
 import { SalesFacturadasView } from '@/components/dashboard/sales/SalesFacturadasView';
 import { MisCobrosView } from '@/components/dashboard/sales/MisCobrosView';
 import { BaseClientesView } from '@/components/dashboard/clients/BaseClientesView';
-import { EmailMarketingView } from '@/components/dashboard/clients/EmailMarketingView';
+import { EditarNegocioView } from '@/components/dashboard/EditarNegocioView';
+import { ServiciosView } from '@/components/dashboard/ServiciosView';
+import { BookingDetailModal } from '@/components/dashboard/BookingDetailModal';
 import { OnboardingSidebar } from '@/components/dashboard/OnboardingSidebar';
-import { OnboardingTooltip } from '@/components/dashboard/OnboardingTooltip';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 type SalesSubTab = 'facturadas' | 'cobros';
@@ -34,13 +35,10 @@ function BusinessDashboardContent() {
   }, []);
 
   const [business, setBusiness] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'agenda' | 'sales' | 'clients' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'agenda' | 'sales' | 'services' | 'clients' | 'settings'>(
     (searchParams.get('tab') as any) || 'agenda'
   );
   const [salesSubTab, setSalesSubTab] = useState<SalesSubTab>(() => sanitizeSalesSubTab(searchParams.get('sales')));
-  const [clientsSubTab, setClientsSubTab] = useState<'base' | 'email-marketing'>(
-    (searchParams.get('clients') as any) || 'base'
-  );
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -49,6 +47,7 @@ function BusinessDashboardContent() {
   const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
   const [modalSelectedDate, setModalSelectedDate] = useState<Date | undefined>();
   const [modalSelectedTime, setModalSelectedTime] = useState<string | undefined>();
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   // Onboarding
   const {
@@ -58,8 +57,6 @@ function BusinessDashboardContent() {
     setSidebarOpen: setIsOnboardingSidebarOpen,
     markTaskAsCompleted,
   } = useOnboarding(business);
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
-
   const fetchBusiness = useCallback(async () => {
     try {
       const response = await fetch(`/api/businesses/${slug}`);
@@ -76,29 +73,54 @@ function BusinessDashboardContent() {
 
   const fetchBookings = useCallback(async () => {
     try {
-      const response = await fetch(`/api/businesses/${slug}/bookings`);
+      const response = await fetch(`/api/businesses/${slug}/bookings`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error('No tenés acceso a este negocio. Redirigiendo...');
+          router.push('/dashboard');
+          return;
+        }
+        toast.error(data.error || 'Error al cargar reservas');
+        setBookings([]);
+        return;
+      }
       setBookings(data.bookings || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      toast.error('Error al cargar reservas');
+      setBookings([]);
     }
-  }, [slug]);
+  }, [slug, router]);
 
   useEffect(() => {
     fetchBusiness();
     fetchBookings();
   }, [slug, fetchBusiness, fetchBookings]);
 
+  // Refrescar reservas al volver a la pestaña (p.ej. tras agendar desde web pública)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && business) {
+        fetchBookings();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [fetchBookings, business]);
+
   // Sincronizar activeTab y subTabs con searchParams
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     const salesParam = searchParams.get('sales');
-    const clientsParam = searchParams.get('clients');
 
     let hasChanges = false;
 
     // Actualizar activeTab solo si cambió
-    if (tabParam && ['agenda', 'sales', 'clients', 'settings'].includes(tabParam)) {
+    if (tabParam && ['agenda', 'sales', 'services', 'clients', 'settings'].includes(tabParam)) {
       setActiveTab((currentTab) => {
         const newTab = tabParam as typeof currentTab;
         if (newTab !== currentTab) {
@@ -113,18 +135,6 @@ function BusinessDashboardContent() {
     if (salesParam && ['facturadas', 'cobros'].includes(salesParam)) {
       setSalesSubTab((currentSubTab) => {
         const newSubTab = sanitizeSalesSubTab(salesParam);
-        if (newSubTab !== currentSubTab) {
-          hasChanges = true;
-          return newSubTab;
-        }
-        return currentSubTab;
-      });
-    }
-
-    // Actualizar clientsSubTab solo si cambió
-    if (clientsParam && ['base', 'email-marketing'].includes(clientsParam)) {
-      setClientsSubTab((currentSubTab) => {
-        const newSubTab = clientsParam as typeof currentSubTab;
         if (newSubTab !== currentSubTab) {
           hasChanges = true;
           return newSubTab;
@@ -170,7 +180,7 @@ function BusinessDashboardContent() {
   }, []);
 
   const handleBookingClick = useCallback((booking: any) => {
-    toast(`Reserva: ${booking.clientName} - ${formatTime(booking.startTime)}`);
+    setSelectedBooking(booking);
   }, []);
 
   const handleNewBookingClose = useCallback(() => {
@@ -302,8 +312,18 @@ function BusinessDashboardContent() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Actualizado hace 0 min</span>
-                    <button className="p-2 hover:bg-gray-100 rounded">
+                    <span className="text-xs text-gray-500">
+                      {bookings.length} reserva{bookings.length !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fetchBookings();
+                        toast.success('Actualizando reservas...');
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded"
+                      title="Actualizar reservas"
+                    >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
@@ -342,7 +362,8 @@ function BusinessDashboardContent() {
                       filteredBookings.map((booking) => (
                         <div
                           key={booking.id}
-                          className="rounded-lg border bg-white p-4 hover:shadow-md transition-shadow"
+                          className="cursor-pointer rounded-lg border bg-white p-4 hover:shadow-md transition-shadow"
+                          onClick={() => handleBookingClick(booking)}
                         >
                           <div className="flex items-start justify-between">
             <div>
@@ -427,165 +448,62 @@ function BusinessDashboardContent() {
           </div>
           )}
 
-          {/* Clients Tab */}
-          {activeTab === 'clients' && (
+          {/* Services Tab */}
+          {activeTab === 'services' && (
             <div className="h-full">
-              {/* Clients Header */}
               <div className="border-b bg-white px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {clientsSubTab === 'base' && 'Base de Clientes'}
-                    {clientsSubTab === 'email-marketing' && 'Email Marketing'}
-                  </h1>
-                </div>
-          </div>
-          
-              {/* Clients Content */}
-              <div className="flex h-full">
-                {/* Sidebar para Email Marketing y Recordatorios */}
-                {clientsSubTab === 'email-marketing' && (
-                  <div className="w-64 border-r bg-white p-4">
-                    <h2 className="mb-4 text-sm font-semibold text-gray-900 uppercase">
-                      Email marketing
-                    </h2>
-                    {clientsSubTab === 'email-marketing' && (
-                      <nav className="space-y-1">
-                        <a
-                          href={`/dashboard/negocio/${slug}?tab=clients&clients=email-marketing`}
-                          className="flex items-center gap-3 rounded-lg bg-primary-50 px-3 py-2 text-sm font-medium text-primary-600"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                          </svg>
-                          Campañas
-                        </a>
-                        <a
-                          href="#"
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          Audiencias
-                        </a>
-                        <a
-                          href="#"
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          Emails Suprimidos
-                        </a>
-                      </nav>
-                    )}
-                  </div>
-                )}
-
-                {/* Main Content */}
-                <div className="flex-1 overflow-y-auto">
-                  {clientsSubTab === 'base' && (
-                    <BaseClientesView bookings={bookings} business={business} />
-                  )}
-                  {clientsSubTab === 'email-marketing' && (
-                    <EmailMarketingView />
-                  )}
-                </div>
+                <h1 className="text-2xl font-bold text-gray-900">Servicios</h1>
+              </div>
+              <div className="p-6">
+                <ServiciosView business={business} onServicesChanged={fetchBusiness} />
               </div>
             </div>
           )}
 
-          {/* Settings Tab */}
+          {/* Clients Tab */}
+          {activeTab === 'clients' && (
+            <div className="h-full">
+              <div className="border-b bg-white px-6 py-4">
+                <h1 className="text-2xl font-bold text-gray-900">Base de Clientes</h1>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                <BaseClientesView bookings={bookings} business={business} />
+              </div>
+            </div>
+          )}
+
+          {/* Settings Tab - Administración */}
           {activeTab === 'settings' && (
             <div className="p-6 space-y-6">
-              {/* Banner Informativo */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <div className="flex items-start gap-3">
-                  <svg className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">¡Configura el horario y la dirección del local!</p>
-                    <p className="text-xs mt-1">Con esta información, podrás agendar citas manuales y tus clientes podrán agendar sus citas en el sitio web</p>
-                  </div>
-                </div>
-              </div>
+              <EditarNegocioView
+                business={business}
+                onSuccess={fetchBusiness}
+              />
 
-              {/* Perfil Section */}
-          <Card>
-            <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{business?.name || 'Negocio'}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" id="view-schedule-button">
-                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        Ver horario
-                      </Button>
-                      <Button variant="primary" size="sm" id="edit-schedule-button">
-                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Editar
-                      </Button>
-                    </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>URL de tu página de agendado</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/negocio/${business.slug}`}
+                      readOnly
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/negocio/${business.slug}`
+                        );
+                        toast.success('Link copiado');
+                      }}
+                    >
+                      Copiar
+                    </Button>
                   </div>
-            </CardHeader>
-            <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="mb-4 font-semibold">Información Básica</h3>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                          <p className="text-sm text-gray-600">Nombre</p>
-                          <p className="font-medium">{business.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Slug</p>
-                          <p className="font-medium">{business.slug}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Teléfono</p>
-                          <p className="font-medium">{business.phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Email</p>
-                          <p className="font-medium">{business.email || 'No configurado'}</p>
-                        </div>
-                        <div className="md:col-span-2">
-                          <p className="text-sm text-gray-600">Dirección</p>
-                          <p className="font-medium">
-                            {business.address}, {business.city}, {business.state}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="mb-2 font-semibold">URL Pública</h3>
-              <div className="flex items-center gap-2">
-                        <Input
-                          value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/negocio/${business.slug}`}
-                  readOnly
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                              `${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/negocio/${business.slug}`
-                    );
-                    toast.success('Link copiado');
-                  }}
-                >
-                  Copiar
-                </Button>
-                      </div>
-                    </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
               {/* Upgrade Plan Section */}
               <Card className="border-primary-200 bg-primary-50">
@@ -630,6 +548,19 @@ function BusinessDashboardContent() {
       </main>
     </div>
 
+          {/* Booking Detail Modal */}
+          {selectedBooking && (
+            <BookingDetailModal
+              booking={selectedBooking}
+              businessSlug={slug}
+              onClose={() => setSelectedBooking(null)}
+              onStatusChange={() => {
+                fetchBookings();
+                setSelectedBooking(null);
+              }}
+            />
+          )}
+
           {/* New Booking Modal */}
           <NewBookingModal
             isOpen={isNewBookingModalOpen}
@@ -657,19 +588,6 @@ function BusinessDashboardContent() {
             />
           )}
 
-          {/* Onboarding Tooltips */}
-          {activeTab === 'settings' && activeTooltip === 'schedule' && (
-            <OnboardingTooltip
-              title="¡Excelente! ✨"
-              description="Accede a esta sección para configurar tu horario y dirección."
-              step="Paso 2 de 4"
-              targetId="edit-schedule-button"
-              position="right"
-              onClose={() => setActiveTooltip(null)}
-              onNext={() => setActiveTooltip('schedule-details')}
-              show={true}
-            />
-          )}
         </div>
       );
     }

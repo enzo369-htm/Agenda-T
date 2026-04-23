@@ -198,6 +198,52 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH /api/bookings - Actualizar estado de una reserva
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { bookingId, status } = body;
+
+    if (!bookingId || !status) {
+      return NextResponse.json({ error: 'bookingId y status son requeridos' }, { status: 400 });
+    }
+
+    const validStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Estado inválido' }, { status: 400 });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { business: true },
+    });
+
+    if (!booking) {
+      return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+    }
+
+    if (booking.business.ownerId !== session.user.id && session.user.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({ error: 'No tenés permiso' }, { status: 403 });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+      include: { service: true, employee: true },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    return NextResponse.json({ error: 'Error al actualizar reserva' }, { status: 500 });
+  }
+}
+
 // GET /api/bookings - Obtener reservas del usuario
 export async function GET(request: NextRequest) {
   try {

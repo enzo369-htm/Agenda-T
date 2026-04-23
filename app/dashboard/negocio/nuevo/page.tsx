@@ -46,7 +46,10 @@ export default function NewBusinessPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al crear negocio');
+        const msg = data.details && response.status === 500
+          ? `${data.error}: ${data.details}`
+          : (data.error || 'Error al crear negocio');
+        throw new Error(msg);
       }
 
       toast.success('¡Negocio creado exitosamente!');

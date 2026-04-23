@@ -1,21 +1,24 @@
 import { z } from 'zod';
 
+const emptyToUndefined = (val: unknown) =>
+  (val == null || (typeof val === 'string' && val.trim() === '')) ? undefined : val;
+
 export const businessSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   slug: z
     .string()
     .min(2, 'El slug debe tener al menos 2 caracteres')
     .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
-  description: z.string().optional(),
+  description: z.preprocess(emptyToUndefined, z.string().optional()),
   category: z.string().default('beauty'),
-  address: z.string().min(5, 'La dirección es requerida'),
+  address: z.string().min(5, 'La dirección debe tener al menos 5 caracteres'),
   city: z.string().min(2, 'La ciudad es requerida'),
   state: z.string().min(2, 'La provincia/estado es requerida'),
   country: z.string().default('Argentina'),
-  postalCode: z.string().optional(),
-  phone: z.string().min(10, 'Teléfono inválido'),
-  email: z.string().email('Email inválido').optional(),
-  website: z.string().url('URL inválida').optional().or(z.literal('')),
+  postalCode: z.preprocess(emptyToUndefined, z.string().optional()),
+  phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos'),
+  email: z.preprocess(emptyToUndefined, z.string().email('Email inválido').optional()),
+  website: z.preprocess(emptyToUndefined, z.string().url('URL inválida').optional()),
   timezone: z.string().default('America/Argentina/Buenos_Aires'),
   openingHours: z.record(z.array(z.object({
     start: z.string(),
@@ -55,7 +58,29 @@ export const availabilitySchema = z.object({
   reason: z.string().optional(),
 });
 
+export const businessUpdateSchema = z.object({
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),
+  description: z.preprocess(emptyToUndefined, z.string().optional()),
+  phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos').optional(),
+  address: z.string().min(5, 'La dirección debe tener al menos 5 caracteres').optional(),
+  city: z.string().min(2, 'La ciudad es requerida').optional(),
+  coverImage: z.preprocess(
+    emptyToUndefined,
+    z.string().refine((v) => !v || v.startsWith('/') || v.startsWith('http'), 'Ruta inválida').optional()
+  ),
+  logo: z.preprocess(
+    emptyToUndefined,
+    z.string().refine((v) => !v || v.startsWith('/') || v.startsWith('http'), 'Ruta inválida').optional()
+  ),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Color inválido (ej: #0ea5e9)')
+    .optional(),
+  openingHours: z.record(z.any()).optional(),
+});
+
 export type BusinessInput = z.infer<typeof businessSchema>;
+export type BusinessUpdateInput = z.infer<typeof businessUpdateSchema>;
 export type ServiceInput = z.infer<typeof serviceSchema>;
 export type EmployeeInput = z.infer<typeof employeeSchema>;
 export type AvailabilityInput = z.infer<typeof availabilitySchema>;

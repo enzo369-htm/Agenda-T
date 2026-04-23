@@ -1,3 +1,5 @@
+@import 'react-day-picker/dist/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +11,22 @@
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
+  }
+
+  /* Evitar que nextjs-portal bloquee clics: solo el contenedor es transparente a eventos */
+  nextjs-portal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: 99999;
+    pointer-events: none !important;
+  }
+  nextjs-portal > * {
+    pointer-events: auto;
   }
 }
 
@@ -74,5 +92,13 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Calendario de reservas - más grande y moderno */
+.rdp-day {
+  border-radius: 12px !important;
+}
+.rdp-nav_button {
+  border-radius: 12px !important;
 }
 

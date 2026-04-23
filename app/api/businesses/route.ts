@@ -4,10 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { businessSchema } from '@/lib/validations/business';
 
-// GET /api/businesses - Listar negocios (público)
+// GET /api/businesses - Listar negocios (público) o ?mine=1 para solo los del usuario
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const mine = searchParams.get('mine') === '1';
     const category = searchParams.get('category');
     const city = searchParams.get('city');
     const search = searchParams.get('search');
@@ -18,6 +19,15 @@ export async function GET(request: NextRequest) {
     const where: any = {
       isActive: true,
     };
+
+    // Si ?mine=1 y hay sesión, filtrar solo negocios del usuario
+    if (mine) {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ businesses: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
+      }
+      where.ownerId = session.user.id;
+    }
 
     if (category) {
       where.category = category;
@@ -65,8 +75,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching businesses:', error);
+    const message = error instanceof Error ? error.message : 'Error al obtener negocios';
     return NextResponse.json(
-      { error: 'Error al obtener negocios' },
+      { error: 'Error al obtener negocios', details: process.env.NODE_ENV === 'development' ? message : undefined },
       { status: 500 }
     );
   }
@@ -99,10 +110,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear negocio
+    // Crear negocio (excluir openingHours/settings si vienen vacíos para evitar errores de Prisma)
+    const { openingHours, settings, ...rest } = validatedData;
     const business = await prisma.business.create({
       data: {
-        ...validatedData,
+        ...rest,
         ownerId: session.user.id,
       },
     });
@@ -121,16 +133,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(business, { status: 201 });
   } catch (error) {
     console.error('Error creating business:', error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+      const zodError = error as { errors: Array<{ path: string[]; message: string }> };
+      const firstError = zodError.errors[0];
+      const field = firstError?.path?.join('.') || 'campo';
+      const message = firstError?.message || 'Datos inválidos';
       return NextResponse.json(
-        { error: 'Datos inválidos', details: error },
+        { error: `${field}: ${message}`, details: zodError.errors },
         { status: 400 }
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Error al crear negocio';
     return NextResponse.json(
-      { error: 'Error al crear negocio' },
+      {
+        error: 'Error al crear negocio',
+        details: process.env.NODE_ENV === 'development' ? message : undefined,
+      },
       { status: 500 }
     );
   }

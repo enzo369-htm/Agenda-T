@@ -21,9 +21,10 @@
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
+    "docker:up": "docker compose up -d 2>/dev/null || docker-compose up -d",
+    "docker:down": "docker compose down 2>/dev/null || docker-compose down",
+    "docker:logs": "docker compose logs -f 2>/dev/null || docker-compose logs -f",
+    "db:setup": "node scripts/setup-db.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

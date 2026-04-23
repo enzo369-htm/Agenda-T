@@ -68,7 +68,7 @@ export default function RegisterPage() {
       if (result?.error) {
         router.push('/auth/login');
       } else {
-        router.push('/dashboard');
+        router.push('/onboarding');
         router.refresh();
       }
     } catch (error: any) {
@@ -81,7 +81,7 @@ export default function RegisterPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/dashboard' });
+      await signIn('google', { callbackUrl: '/onboarding' });
     } catch (error) {
       toast.error('Error al registrarse con Google');
       setIsLoading(false);

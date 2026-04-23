@@ -17,6 +17,9 @@ next-env.d.ts
 /build
 /dist
 
+# Uploads (imágenes subidas por usuarios)
+/public/uploads/
+
 # Misc
 .DS_Store
 *.pem

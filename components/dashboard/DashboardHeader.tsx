@@ -39,16 +39,8 @@ export function DashboardHeader({
         { label: 'Mis cobros', href: business ? `/dashboard/negocio/${business.slug}?tab=sales&sales=cobros` : '#' },
       ]
     },
-    { 
-      id: 'clients', 
-      label: 'Clientes', 
-      href: business ? `/dashboard/negocio/${business.slug}?tab=clients&clients=base` : '/dashboard',
-      hasDropdown: true,
-      dropdownItems: [
-        { label: 'Base de Clientes', href: business ? `/dashboard/negocio/${business.slug}?tab=clients&clients=base` : '#' },
-        { label: 'Email Marketing', href: business ? `/dashboard/negocio/${business.slug}?tab=clients&clients=email-marketing` : '#' },
-      ]
-    },
+    { id: 'services', label: 'Servicios', href: business ? `/dashboard/negocio/${business.slug}?tab=services` : '/dashboard' },
+    { id: 'clients', label: 'Clientes', href: business ? `/dashboard/negocio/${business.slug}?tab=clients` : '/dashboard' },
     { id: 'admin', label: 'Administración', href: business ? `/dashboard/negocio/${business.slug}?tab=settings` : '/dashboard' },
   ];
 
