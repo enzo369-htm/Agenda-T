@@ -1,0 +1,26 @@
+# En plan Vercel Hobby no se pueden programar crons más de 1 vez/día.
+# Los recordatorios horarios se disparan desde GitHub Actions (gratis) llamando a la API.
+# Añadí en GitHub → Settings → Secrets: CRON_BASE_URL, CRON_SECRET
+# (mismo CRON_SECRET que en Vercel, y CRON_BASE_URL = https://tu-dominio.vercel.app)
+
+name: Hourly reminder cron (proxy)
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call reminders API
+        env:
+          URL: ${{ secrets.CRON_BASE_URL }}
+          SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then
+            echo "Skip: define CRON_BASE_URL y CRON_SECRET en el repo (secrets)."
+            exit 0
+          fi
+          curl -sfS -H "Authorization: Bearer $SECRET" "$URL/api/cron/reminders"
